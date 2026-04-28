@@ -12,7 +12,7 @@ st.markdown("### Insira sua API Key do Groq")
 api_key = st.text_input(
     "Cole sua chave Groq aqui:",
     type="password",
-    placeholder="gsk_pyKM9FmSCroeDO5Uv8cgWGdyb3FYQwt8CvXrSzl9...",
+    placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxx",
     key="api_key_input"
 )
 
@@ -31,12 +31,12 @@ if st.button("🚀 Gerar Relatório Premium", type="primary"):
 
         with st.spinner("Gerando análise profunda e relatório premium..."):
             response = client.chat.completions.create(
-                model="llama-3.1-70b-versatile",
+                model="llama-3.3-70b-versatile",        # Modelo atual e potente
                 messages=[
-                    {"role": "system", "content": "Você é o CFO da Alma e dos Negócios™. Gere relatórios executivos de alto nível."},
-                    {"role": "user", "content": "Gere um relatório completo de análise para Luciano Francisco, incluindo diagnóstico de redes sociais, scores, veredito e plano de ação."}
+                    {"role": "system", "content": "Você é o CFO da Alma e dos Negócios™. Sempre entregue relatórios executivos profissionais, claros e transformadores."},
+                    {"role": "user", "content": "Gere um relatório completo premium para Luciano Francisco. Inclua análise de redes sociais, scores visuais, veredito forte, plano de ação 30/90 dias e linguagem de consultoria internacional."}
                 ],
-                max_tokens=6000,
+                max_tokens=8000,
                 temperature=0.7
             )
 
@@ -55,4 +55,4 @@ if st.button("🚀 Gerar Relatório Premium", type="primary"):
     except Exception as e:
         st.error(f"Erro: {str(e)}")
 
-st.caption("App simplificado para resolver problema de digitação no campo de API Key.")
+st.caption("App simplificado • Use o modelo llama-3.3-70b-versatile")
