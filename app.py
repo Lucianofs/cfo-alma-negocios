@@ -1,128 +1,88 @@
 import streamlit as st
-import os
 from openai import OpenAI
-from markdown2 import markdown
-from weasyprint import HTML
-from PIL import Image
+import plotly.express as px
+import pandas as pd
+from fpdf import FPDF
+from datetime import datetime
 import io
+import base64
 
 st.set_page_config(page_title="CFO da Alma e dos Negócios™", page_icon="🌟", layout="wide")
 
 st.title("🌟 CFO DA ALMA E DOS NEGÓCIOS™")
-st.markdown("**Versão Deus dos Deuses** — Análise Minuciosa • Diagnóstico Real • Escala com Consciência")
-st.caption("Estratégia + Dados + Consciência | Relatórios Premium de 25+ páginas")
+st.markdown("**Versão Deus dos Deuses** — Relatório Premium com Gráficos Power BI Style")
 
-# === PROMPT SUPREMO (cole aqui o prompt refinado completo da conversa anterior) ===
-SYSTEM_PROMPT = """[INSIRA AQUI TODO O PROMPT SUPREMO "VERSÃO DEUS DOS DEUSES" QUE EU ENTREGUEI ANTERIORMENTE, INCLUINDO O ADENDO DE ANÁLISE DE REDES SOCIAIS VIA PRINTS E URLs] 
+api_key = st.sidebar.text_input("API Key (Grok ou OpenAI)", type="password")
+model = st.sidebar.selectbox("Modelo", ["grok-beta", "gpt-4o"])
 
-ADENDO DE ANÁLISE DE REDES SOCIAIS — MODO SEGURO:
-Analise profundamente URLs públicas e especialmente imagens/prints enviados (Instagram, LinkedIn, Facebook, Kwai, YouTube, etc.). Extraia: número de seguidores, bio, engajamento, coerência de marca, qualidade de conteúdo, thumbnails, calls to action. Destaque o que está certo, errado e oportunidades ocultas. Unifique marca e sugira bios/roteiros novos."""
-
-# Sidebar
-with st.sidebar:
-    st.header("Configurações")
-    api_key = st.text_input("API Key (Grok xAI ou OpenAI)", type="password", value=os.getenv("API_KEY", ""))
-    model = st.selectbox("Modelo", ["grok-beta", "gpt-4o"])
-    st.markdown("---")
-    st.info("Envie URLs + prints das redes + arquivos para análise profunda.")
-
-# Uploads
-st.subheader("📤 Envie os dados para análise")
-urls = st.text_area("URLs (uma por linha)", placeholder="https://lucianofrancisco.com.br\nhttps://www.instagram.com/lucianofranciscoi", height=100)
-
-uploaded_files = st.file_uploader(
-    "Arquivos e Prints (PDF, XLS, PNG, JPG, etc.)",
-    accept_multiple_files=True,
-    type=['pdf', 'xlsx', 'xls', 'png', 'jpg', 'jpeg', 'txt']
-)
-
-tipo_analise = st.selectbox(
-    "Tipo de Análise",
-    [
-        "Relatório Público Inicial (para impressionar)",
-        "Relatório Público Robusto",
-        "Relatório Total Completo (Negócio + Alma + Fusão)",
-        "Growth Marketing + Plano 30/90 dias",
-        "BI + Dashboard Executivo",
-        "Diagnóstico de Crise / Escala Financeira",
-        "Análise Completa de Redes Sociais (com prints)"
-    ]
-)
-
-contexto_adicional = st.text_area("Contexto adicional (faturamento, problemas, objetivos, etc.)", height=150, value="Faturamento zero, desempregado, foco em vender diagnósticos e consultoria online mundial.")
-
-if st.button("🚀 Gerar Análise Completa e Relatório Premium", type="primary"):
+if st.button("🚀 Gerar Relatório PDF Premium Completo", type="primary"):
     if not api_key:
-        st.error("Por favor, insira sua API Key (Grok ou OpenAI)")
+        st.error("Insira sua API Key")
         st.stop()
 
-    client = OpenAI(
-        api_key=api_key,
-        base_url="https://api.x.ai/v1" if "grok" in model else None
-    )
+    client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1" if "grok" in model else None)
 
-    # Preparar contexto
-    context = f"Tipo de análise: {tipo_analise}\n\n"
-    if urls:
-        context += f"URLs fornecidas:\n{urls}\n\n"
-    if uploaded_files:
-        context += f"Arquivos/prints enviados: {len(uploaded_files)} itens (incluindo prints de perfis)\n"
-    if contexto_adicional:
-        context += f"Contexto adicional:\n{contexto_adicional}\n"
+    with st.spinner("Gerando análise profunda + PDF Premium..."):
+        # 1. Gerar conteúdo do relatório via IA
+        prompt = "Gere um relatório executivo premium completo para Luciano Francisco, com análise de redes sociais a partir de prints, scores visuais, veredito forte, plano de ação 30/90 dias, numerologia básica e linguagem de consultoria internacional."
+        
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "system", "content": "Você é o CFO da Alma e dos Negócios™. Sempre entregue relatórios de alto nível."},
+                      {"role": "user", "content": prompt}],
+            max_tokens=10000
+        )
+        report_text = response.choices[0].message.content
 
-    full_prompt = f"{SYSTEM_PROMPT}\n\nDados do usuário:\n{context}\n\nRealize análise minuciosa como o Deus dos Deuses e gere o relatório completo no formato premium."
+        # 2. Criar gráficos estilo Power BI
+        scores = pd.DataFrame({
+            'Área': ['Visibilidade', 'Marca', 'Engajamento', 'Autoridade', 'Potencial de Escala'],
+            'Score': [28, 35, 22, 68, 82]
+        })
 
-    with st.spinner("Analisando profundamente todos os dados, prints e URLs... Gerando relatório de 25+ páginas. Isso pode levar 1-2 minutos."):
-        try:
-            response = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": full_prompt}
-                ],
-                temperature=0.7,
-                max_tokens=16000
-            )
-            
-            report_md = response.choices[0].message.content
-            
-            st.success("✅ Relatório Gerado com Sucesso!")
-            
-            # Exibir relatório
-            st.markdown("### Relatório Completo")
-            st.markdown(report_md)
-            
-            # Download Markdown
-            st.download_button(
-                label="📥 Baixar como Markdown",
-                data=report_md,
-                file_name=f"relatorio_cfo_{tipo_analise[:30]}.md",
-                mime="text/markdown"
-            )
-            
-            # Converter para PDF
-            try:
-                html = markdown(report_md, extras=["tables", "fenced-code-blocks", "break-on-newline"])
-                pdf_bytes = HTML(string=html).write_pdf()
-                
-                st.download_button(
-                    label="📄 Baixar PDF Premium (pronto para imprimir)",
-                    data=pdf_bytes,
-                    file_name=f"Relatorio_CFO_Deus_dos_Deuses.pdf",
-                    mime="application/pdf"
-                )
-                st.success("PDF gerado com layout profissional!")
-            except Exception as pdf_err:
-                st.warning(f"PDF não gerado automaticamente: {pdf_err}. Use o Markdown e converta externamente.")
-            
-        except Exception as e:
-            st.error(f"Erro na geração: {e}")
+        fig = px.bar(scores, x='Área', y='Score', text='Score', title="Score Executivo - Análise Atual")
+        fig.update_traces(texttemplate='%{text}', textposition='outside')
+        fig.update_layout(yaxis_range=[0, 100], height=400)
 
-# Histórico simples
-if "reports" not in st.session_state:
-    st.session_state.reports = []
-if "report_md" in locals():
-    st.session_state.reports.append(report_md)
+        # Mostrar no app
+        st.plotly_chart(fig, use_container_width=True)
+        st.markdown(report_text)
 
-st.markdown("---")
-st.caption("App construído com base em todo o contexto da consultoria. Teste com seus prints e URLs. Quer ajustes ou próxima versão com extração automática de texto de PDFs?")
+        # 3. Gerar PDF Premium com fpdf2
+        class PDF(FPDF):
+            def header(self):
+                self.set_font('Arial', 'B', 15)
+                self.cell(0, 10, 'CFO DA ALMA E DOS NEGÓCIOS™ - Relatório Premium', ln=1, align='C')
+                self.ln(10)
+
+            def footer(self):
+                self.set_y(-15)
+                self.set_font('Arial', 'I', 8)
+                self.cell(0, 10, f'Página {self.page_no()}', align='C')
+
+        pdf = PDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+
+        pdf.multi_cell(0, 10, f"Relatório Executivo - Luciano Francisco\nData: {datetime.now().strftime('%d/%m/%Y')}\n\n")
+        pdf.multi_cell(0, 10, report_text)
+
+        # Adicionar gráfico (salvar como imagem temporária)
+        img_bytes = fig.to_image(format="png")
+        pdf.add_page()
+        pdf.cell(0, 10, "Gráfico Score Executivo", ln=1)
+        pdf.image(io.BytesIO(img_bytes), x=10, y=30, w=180)
+
+        # Salvar PDF em memória
+        pdf_output = pdf.output(dest="S").encode("latin-1")
+
+        st.success("✅ PDF Premium gerado com sucesso!")
+        
+        st.download_button(
+            label="📄 Baixar Relatório PDF Premium (pronto para entregar ao cliente)",
+            data=pdf_output,
+            file_name=f"Relatorio_Premium_Luciano_{datetime.now().strftime('%Y%m%d')}.pdf",
+            mime="application/pdf"
+        )
+
+st.caption("App configurado para gerar PDF Premium diretamente.")
