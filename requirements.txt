@@ -1,8 +1,8 @@
 streamlit
 openai
-markdown2
-weasyprint
-pillow
+plotly
 pandas
-PyPDF2
+fpdf2
+pillow
 python-dotenv
+kaleido
