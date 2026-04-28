@@ -1,77 +1,58 @@
 import streamlit as st
 from openai import OpenAI
-import plotly.express as px
-import pandas as pd
 from datetime import datetime
 
-st.set_page_config(page_title="CFO da Alma e dos Negócios™", page_icon="🌟", layout="wide")
+st.set_page_config(page_title="CFO da Alma e dos Negócios™", page_icon="🌟", layout="centered")
 
 st.title("🌟 CFO DA ALMA E DOS NEGÓCIOS™")
-st.markdown("**Versão Deus dos Deuses** — Relatório Premium")
+st.markdown("**Versão Deus dos Deuses**")
 
-# === CAMPO DE API KEY CORRIGIDO ===
-st.sidebar.header("Configuração")
-api_key = st.sidebar.text_input(
-    "🔑 Cole sua API Key aqui",
+st.markdown("### Insira sua API Key do Groq")
+
+api_key = st.text_input(
+    "Cole sua chave Groq aqui:",
     type="password",
-    placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxx",
-    help="Use sua chave do Groq, Grok ou OpenAI"
+    placeholder="gsk_pyKM9FmSCroeDO5Uv8cgWGdyb3FYQwt8CvXrSzl9...",
+    key="api_key_input"
 )
 
-model = st.sidebar.selectbox(
-    "Escolha o Modelo",
-    ["groq-llama3.1-70b", "groq-llama3.1-8b", "gpt-4o-mini"]
-)
-
-if st.button("🚀 Gerar Relatório Premium Completo", type="primary"):
-    if not api_key:
-        st.error("⚠️ Por favor, cole sua API Key no campo ao lado.")
+if st.button("🚀 Gerar Relatório Premium", type="primary"):
+    if not api_key or len(api_key) < 20:
+        st.error("Por favor, cole sua chave Groq completa no campo acima.")
         st.stop()
 
-    # Configuração para Groq
-    client = OpenAI(
-        api_key=api_key,
-        base_url="https://api.groq.com/openai/v1"
-    )
+    st.success("Chave detectada! Conectando ao Groq...")
 
-    with st.spinner("Analisando seus dados e gerando relatório premium..."):
-        prompt = """
-        Você é o CFO da Alma e dos Negócios™. 
-        Gere um relatório executivo premium completo para Luciano Francisco.
-        Inclua análise de redes sociais, scores visuais, veredito forte, plano de ação e linguagem profissional.
-        """
-
-        response = client.chat.completions.create(
-            model="llama-3.1-70b-versatile",   # Modelo bom e rápido no Groq
-            messages=[
-                {"role": "system", "content": "Você é um consultor executivo de alto nível."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=8000,
-            temperature=0.7
+    try:
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1"
         )
 
-        report_text = response.choices[0].message.content
+        with st.spinner("Gerando análise profunda e relatório premium..."):
+            response = client.chat.completions.create(
+                model="llama-3.1-70b-versatile",
+                messages=[
+                    {"role": "system", "content": "Você é o CFO da Alma e dos Negócios™. Gere relatórios executivos de alto nível."},
+                    {"role": "user", "content": "Gere um relatório completo de análise para Luciano Francisco, incluindo diagnóstico de redes sociais, scores, veredito e plano de ação."}
+                ],
+                max_tokens=6000,
+                temperature=0.7
+            )
 
-        # Gráfico exemplo
-        scores = pd.DataFrame({
-            'Categoria': ['Visibilidade', 'Marca', 'Engajamento', 'Autoridade', 'Potencial'],
-            'Score': [28, 35, 22, 68, 82]
-        })
-
-        fig = px.bar(scores, x='Categoria', y='Score', text='Score', title="Score Executivo")
-        fig.update_traces(texttemplate='%{text}', textposition='outside')
-        fig.update_layout(yaxis_range=[0, 100])
+            report = response.choices[0].message.content
 
         st.success("✅ Relatório gerado com sucesso!")
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown(report_text)
+        st.markdown(report)
 
         st.download_button(
             label="📥 Baixar Relatório (Markdown)",
-            data=report_text,
-            file_name=f"Relatorio_CFO_{datetime.now().strftime('%Y%m%d')}.md",
+            data=report,
+            file_name=f"Relatorio_CFO_{datetime.now().strftime('%Y%m%d_%H%M')}.md",
             mime="text/markdown"
         )
 
-st.info("💡 Cole sua chave Groq no campo acima e clique no botão vermelho.")
+    except Exception as e:
+        st.error(f"Erro: {str(e)}")
+
+st.caption("App simplificado para resolver problema de digitação no campo de API Key.")
