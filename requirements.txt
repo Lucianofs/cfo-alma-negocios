@@ -1,0 +1,8 @@
+streamlit
+openai
+markdown2
+weasyprint
+pillow
+pandas
+PyPDF2
+python-dotenv
