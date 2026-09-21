@@ -1,1 +1,1 @@
-https://lucianofs.github.io/cfo-alma-negocios
+https://cfodaalmaenegocios.streamlit.app/
