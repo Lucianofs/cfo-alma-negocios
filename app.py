@@ -210,8 +210,7 @@ def create_progress_chart(current, target, label):
     return buf.getvalue()
 
 # Função para gerar PDF
-
-    def sanitize_text(text):
+def sanitize_text(text):
     if not text:
         return ""
     replacements = {
