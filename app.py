@@ -372,7 +372,7 @@ def generate_pdf_report(data, relatorio_texto):
     pdf.cell(0, 5, f'Gerado em {datetime.now().strftime("%d/%m/%Y %H:%M")} | CFO da Alma e dos Negocios (TM) | Confidencial', ln=True, align='C')
     
     # Salvar como bytes
-    pdf_bytes = pdf.output()
+    pdf_bytes = bytes(pdf.output())
     
     return pdf_bytes
 
