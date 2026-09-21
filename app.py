@@ -210,95 +210,168 @@ def create_progress_chart(current, target, label):
     return buf.getvalue()
 
 # Função para gerar PDF
+
+    def sanitize_text(text):
+    """Remove/substitui caracteres que a fonte Helvetica não suporta"""
+    if not text:
+        return ""
+    replacements = {
+        '™': '(TM)',
+        '©': '(C)',
+        '®': '(R)',
+        '—': '-',
+        '–': '-',
+        '•': '-',
+        '→': '->',
+        '★': '*',
+        '■': '[X]',
+        '□': '[ ]',
+        '✓': 'OK',
+        '✗': 'X',
+        '👑': '[CFO]',
+        '📊': '[DATA]',
+        '📥': '[DL]',
+        '💡': '[DICA]',
+        '⚠️': '[AVISO]',
+        '❌': '[ERRO]',
+        '✅': '[OK]',
+        '🧠': '[IA]',
+        '📄': '[DOC]',
+    }
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
+    # Remove emojis e caracteres não-ASCII restantes
+    text = text.encode('ascii', 'replace').decode('ascii')
+    text = text.replace('?', '')  # Remove pontos de interrogação de fallback
+    return text
+
 def generate_pdf_report(data, relatorio_texto):
-    """Gera um PDF profissional estilo McKinsey"""
+    """Gera um PDF profissional estilo McKinsey com suporte a caracteres especiais"""
+    
+    # Sanitiza todo o texto antes de usar no PDF
+    relatorio_limpo = sanitize_text(relatorio_texto)
+    nome_cliente_limpo = sanitize_text(data["nome_cliente"])
+    nicho_limpo = sanitize_text(data["nicho"])
     
     pdf = FPDF()
     pdf.add_page()
     
-    # Capa
+    # ============ CAPA ============
     pdf.set_font('Helvetica', 'B', 24)
     pdf.set_text_color(212, 175, 55)  # Dourado
-    pdf.cell(0, 30, 'CFO DA ALMA E DOS NEGÓCIOS', ln=True, align='C')
+    pdf.cell(0, 25, 'CFO DA ALMA E DOS NEGOCIOS', ln=True, align='C')
     
-    pdf.set_font('Helvetica', 'I', 14)
-    pdf.set_text_color(200, 200, 200)
-    pdf.cell(0, 10, 'Relatório Estratégico Premium', ln=True, align='C')
+    pdf.set_font('Helvetica', 'B', 16)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 10, '(TM)', ln=True, align='C')
     
-    pdf.ln(20)
+    pdf.ln(5)
+    pdf.set_font('Helvetica', 'I', 12)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 8, 'Relatorio Estrategico Premium', ln=True, align='C')
+    pdf.cell(0, 8, 'Metodologia McKinsey-Grade + Diagnostico Holistico', ln=True, align='C')
     
-    # Dados do cliente
+    pdf.ln(15)
+    
+    # Linha decorativa dourada
+    pdf.set_draw_color(212, 175, 55)
+    pdf.set_line_width(1)
+    pdf.line(30, pdf.get_y(), 180, pdf.get_y())
+    
+    pdf.ln(15)
+    
+    # ============ DADOS DO CLIENTE ============
     pdf.set_font('Helvetica', 'B', 12)
-    pdf.set_text_color(0, 0, 0)
-    pdf.cell(0, 10, f'CLIENTE: {data["nome_cliente"]}', ln=True)
-    pdf.cell(0, 10, f'DATA: {datetime.now().strftime("%d/%m/%Y")}', ln=True)
-    pdf.cell(0, 10, f'TIPO DE ANÁLISE: {data["tipo_analise"]}', ln=True)
-    pdf.cell(0, 10, f'NICH: {data["nicho"]}', ln=True)
-    
-    pdf.ln(20)
-    
-    # Sumário Executivo
-    pdf.set_font('Helvetica', 'B', 14)
     pdf.set_text_color(212, 175, 55)
-    pdf.cell(0, 10, '01. SUMÁRIO EXECUTIVO', ln=True)
+    pdf.cell(0, 8, 'INFORMACOES DO CLIENTE', ln=True)
     
     pdf.set_font('Helvetica', '', 10)
-    pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 6, relatorio_texto[:2000])  # Primeira parte do relatório
+    pdf.set_text_color(50, 50, 50)
     
-    pdf.add_page()
+    info_items = [
+        ('Cliente:', nome_cliente_limpo),
+        ('Data:', datetime.now().strftime('%d/%m/%Y')),
+        ('Tipo de Analise:', data["tipo_analise"]),
+        ('Nicho:', nicho_limpo),
+        ('Faturamento Atual:', f"R$ {data.get('faturamento_atual', 'N/I')}"),
+        ('Meta:', f"R$ {data.get('faturamento_meta', 'N/I')}"),
+        ('Data de Nascimento:', data.get('data_nascimento', 'N/I')),
+    ]
     
-    # Diagnóstico da Alma
-    pdf.set_font('Helvetica', 'B', 14)
-    pdf.set_text_color(212, 175, 55)
-    pdf.cell(0, 10, '02. DIAGNÓSTICO DA ALMA', ln=True)
-    
-    if data.get('data_nascimento'):
+    for label, value in info_items:
+        pdf.set_font('Helvetica', 'B', 10)
+        pdf.cell(50, 7, label)
         pdf.set_font('Helvetica', '', 10)
-        pdf.set_text_color(0, 0, 0)
-        pdf.multi_cell(0, 6, f'Data de Nascimento: {data["data_nascimento"]}\n')
-        pdf.multi_cell(0, 6, relatorio_texto[2000:4000])  # Parte sobre numerologia
+        pdf.cell(0, 7, str(value), ln=True)
     
+    pdf.ln(10)
+    pdf.set_draw_color(212, 175, 55)
+    pdf.line(30, pdf.get_y(), 180, pdf.get_y())
+    pdf.ln(10)
+    
+    # ============ SEÇÕES DO RELATÓRIO ============
+    secoes = [
+        ('01. SUMARIO EXECUTIVO', relatorio_limpo[:2500]),
+        ('02. ANALISE DE CONTEXTO', relatorio_limpo[2500:5000]),
+        ('03. DIAGNOSTICO DA ALMA', relatorio_limpo[5000:7500]),
+        ('04. DIAGNOSTICO DOS NEGOCIOS', relatorio_limpo[7500:10000]),
+        ('05. SINTESIS ESTRATEGICA', relatorio_limpo[10000:12500]),
+        ('06. PLANO DE ACAO TATICO', relatorio_limpo[12500:15000]),
+        ('07. INVESTIMENTO E ROI', relatorio_limpo[15000:17500]),
+        ('08. MENSAGEM DE FECHAMENTO', relatorio_limpo[17500:]),
+    ]
+    
+    for titulo, conteudo in secoes:
+        if not conteudo.strip():
+            continue
+            
+        pdf.add_page()
+        
+        # Título da seção
+        pdf.set_font('Helvetica', 'B', 14)
+        pdf.set_text_color(212, 175, 55)
+        pdf.cell(0, 12, titulo, ln=True)
+        
+        # Linha decorativa
+        pdf.set_draw_color(212, 175, 55)
+        pdf.set_line_width(0.5)
+        pdf.line(30, pdf.get_y(), 180, pdf.get_y())
+        pdf.ln(5)
+        
+        # Conteúdo
+        pdf.set_font('Helvetica', '', 10)
+        pdf.set_text_color(30, 30, 30)
+        pdf.multi_cell(0, 6, conteudo)
+    
+    # ============ RODAPÉ FINAL ============
     pdf.add_page()
-    
-    # Diagnóstico dos Negócios
     pdf.set_font('Helvetica', 'B', 14)
     pdf.set_text_color(212, 175, 55)
-    pdf.cell(0, 10, '03. DIAGNÓSTICO DOS NEGÓCIOS', ln=True)
+    pdf.cell(0, 12, 'SOBRE O METODO CFO (TM)', ln=True)
+    
+    pdf.set_draw_color(212, 175, 55)
+    pdf.line(30, pdf.get_y(), 180, pdf.get_y())
+    pdf.ln(5)
     
     pdf.set_font('Helvetica', '', 10)
-    pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 6, relatorio_texto[4000:7000])
+    pdf.set_text_color(30, 30, 30)
     
-    pdf.add_page()
+    sobre_texto = (
+        "Este relatorio foi elaborado com base na metodologia CFO da Alma e dos Negocios (TM), "
+        "criada por Luciano Francisco, combinando analise estrategica de nivel McKinsey/Bain com "
+        "diagnostico holistico profundo (numerologia, energia, bloqueios internos).\n\n"
+        "19 anos de experiencia em educacao, marketing, dados, politica publica e transformacao.\n\n"
+        "Mais de 12.000 profissionais treinados | 20+ empresas atendidas | 300+ palestras\n\n"
+        "Contato: lucianofrancisco.com.br\n"
+        "WhatsApp: Disponivel mediante agendamento"
+    )
+    pdf.multi_cell(0, 6, sobre_texto)
     
-    # Plano de Ação
-    pdf.set_font('Helvetica', 'B', 14)
-    pdf.set_text_color(212, 175, 55)
-    pdf.cell(0, 10, '04. PLANO DE AÇÃO TÁTICO', ln=True)
-    
-    pdf.set_font('Helvetica', '', 10)
-    pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 6, relatorio_texto[7000:])
-    
-    pdf.add_page()
-    
-    # Conclusão
-    pdf.set_font('Helvetica', 'B', 14)
-    pdf.set_text_color(212, 175, 55)
-    pdf.cell(0, 10, '05. CONCLUSÃO E PRÓXIMOS PASSOS', ln=True)
-    
-    pdf.set_font('Helvetica', '', 10)
-    pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 6, 
-        'Este relatório foi elaborado com base na metodologia CFO da Alma e dos Negócios™, '
-        'combinando análise estratégica de nível McKinsey com diagnóstico holístico profundo.\n\n'
-        'Próximos passos:\n'
-        '1. Agendar reunião de apresentação do diagnóstico\n'
-        '2. Definir prioridades de implementação\n'
-        '3. Iniciar consultoria de implementação\n\n'
-        'Contato: Luciano Francisco\n'
-        'www.lucianofrancisco.com.br')
+    # Rodapé com numeração
+    pdf.ln(10)
+    pdf.set_font('Helvetica', 'I', 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 5, f'Gerado em {datetime.now().strftime("%d/%m/%Y %H:%M")} | CFO da Alma e dos Negocios (TM) | Confidencial', ln=True, align='C')
     
     # Salvar como bytes
     pdf_bytes = pdf.output()
