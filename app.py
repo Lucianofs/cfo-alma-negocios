@@ -15,7 +15,7 @@ st.markdown("""
 <style>
     .main { background-color: #0f1115; color: #e0e0e0; }
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 { color: #d4af37; font-weight: 700; }
-    .stTextInput > div > div > input, .stTextArea > div > div > textarea, .stSelectbox > div > div > select {
+    .stTextInput > div > div > input, .stTextArea > div > div > textarea {
         background-color: #1a1d24; color: #ffffff; border: 1px solid #d4af37;
     }
     .stButton > button {
@@ -37,19 +37,6 @@ col1, col2 = st.columns([1, 2])
 with col1:
     st.markdown("### 🔑 Configuração")
     api_key = st.text_input("Chave de API Groq:", type="password", placeholder="gsk_...")
-    
-    # SELETOR DE MODELO BLINDADO
-    st.markdown("### ⚙️ Motor de IA")
-    modelo_escolhido = st.selectbox(
-        "Selecione o modelo (Se um falhar, troque aqui):",
-        options=[
-            "mixtral-8x7b-32768",       # ✅ Mais estável, ótimo para textos longos (Reclame Aqui, URLs)
-            "llama-3.1-70b-versatile",  # ✅ Excelente raciocínio estratégico
-            "gemma2-9b-it"              # ✅ Leve e rápido (fallback de emergência)
-        ],
-        index=0
-    )
-    st.caption("Recomendado: Mixtral 8x7b para análises de grandes volumes de texto.")
     
     st.markdown("### 👤 Perfil do Cliente")
     tipo_analise = st.radio(
@@ -125,13 +112,13 @@ Nicho: {nicho_mercado if nicho_mercado else 'Não fornecido'}
     with st.spinner("🧠 O CFO da Alma e dos Negócios está processando a matriz de dados e gerando a estratégia..."):
         try:
             response = client.chat.completions.create(
-                model=modelo_escolhido, # Usa o modelo selecionado no dropdown
+                model="openai/gpt-oss-20b",  # ✅ MODELO CONFIRMADO FUNCIONAL
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": f"DADOS BRUTOS COLETADOS PARA ANÁLISE:\n\n{dados_brutos}"}
                 ],
-                max_tokens=4000, # Ajustado para evitar estouro no plano gratuito da Groq
-                temperature=0.3  # Baixa para garantir precisão estratégica e profissionalismo
+                max_tokens=4000,
+                temperature=0.3
             )
 
             relatorio_gerado = response.choices[0].message.content
@@ -143,7 +130,7 @@ Nicho: {nicho_mercado if nicho_mercado else 'Não fornecido'}
 
             nome_arquivo = f"Diagnostico_CFO_{nome_cliente.replace(' ', '_').replace('/', '_')}_{datetime.now().strftime('%Y%m%d')}.md"
             st.download_button(
-                label="📥 Baixar Relatório Premium (Markdown)",
+                label=" Baixar Relatório Premium (Markdown)",
                 data=relatorio_gerado,
                 file_name=nome_arquivo,
                 mime="text/markdown"
@@ -153,7 +140,7 @@ Nicho: {nicho_mercado if nicho_mercado else 'Não fornecido'}
 
         except Exception as e:
             st.error(f"❌ Erro na comunicação com a IA: {str(e)}")
-            st.warning("💡 **Solução Rápida:** Volte ao topo da página, no campo 'Motor de IA', selecione um modelo diferente (ex: gemma2-9b-it) e tente gerar novamente.")
+            st.warning("💡 Verifique se sua chave API está correta e se há saldo/créditos na sua conta Groq.")
 
 st.markdown("---")
 st.caption("Desenvolvido por Luciano Francisco | CFO da Alma e dos Negócios™ | Tecnologia de Ponta a Serviço da Transformação.")
