@@ -1,8 +1,8 @@
 streamlit
 openai
-plotly
-pandas
+groq
+datetime
 fpdf2
-pillow
-python-dotenv
-kaleido
+matplotlib
+Pillow
+plotly
