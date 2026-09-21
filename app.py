@@ -212,7 +212,6 @@ def create_progress_chart(current, target, label):
 # Função para gerar PDF
 
     def sanitize_text(text):
-    """Remove/substitui caracteres que a fonte Helvetica não suporta"""
     if not text:
         return ""
     replacements = {
