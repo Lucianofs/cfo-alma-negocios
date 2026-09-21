@@ -34,7 +34,7 @@ Análise numerológica (data 25/10/1977), Plano de ação 30/90 dias e Recomenda
     with st.spinner("Gerando relatório premium..."):
         try:
             response = client.chat.completions.create(
-                model="llama3-8b-8192",   # Modelo mais leve e rápido, dentro do limite
+                model="openai/gpt-oss-20b",   # Modelo mais leve e rápido, dentro do limite
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": "Gere um relatório completo e detalhado para Luciano Francisco baseado em sua presença digital, prints de redes sociais, site e contexto fornecido anteriormente. Seja profundo e profissional."}
