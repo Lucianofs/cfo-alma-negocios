@@ -1,10 +1,16 @@
 import streamlit as st
 from openai import OpenAI
 from datetime import datetime
+import matplotlib.pyplot as plt
+from fpdf import FPDF
+import io
+import base64
+from matplotlib.patches import Circle, Rectangle
+import numpy as np
 
 # Configuração Premium da Página
 st.set_page_config(
-    page_title="CFO da Alma e dos Negócios™ | McKinsey-Grade Analytics", 
+    page_title="CFO da Alma e dos Negócios™ | Executive Intelligence", 
     page_icon="👑",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -35,7 +41,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("👑 CFO DA ALMA E DOS NEGÓCIOS™")
+st.title(" CFO DA ALMA E DOS NEGÓCIOS™")
 st.markdown("### *Metodologia McKinsey-Grade + Diagnóstico Holístico Integrado*")
 st.markdown("### *Por Luciano Francisco | 19 Anos de Excelência Estratégica*")
 st.markdown("---")
@@ -90,6 +96,214 @@ with col3:
         height=400,
         placeholder="Ex:\n- Site: www.exemplo.com (tráfego 3k/mês, SEO fraco)\n- Reclame Aqui: 12 reclamações sobre entrega\n- Instagram: 5k seguidores, engajamento 1.2%\n- CRM: 40% de churn no primeiro mês\n- Data de nascimento do dono: 15/05/1985\n- Objetivo: Escalar para 500k/mês em 12 meses"
     )
+
+# Função para criar gráfico de Scorecard
+def create_scorecard_chart(metrics_dict):
+    """Cria um gráfico de barras horizontal para o scorecard"""
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    names = list(metrics_dict.keys())
+    current = list(metrics_dict.values())
+    
+    colors = ['#d4af37' if v >= 70 else '#c9a227' if v >= 50 else '#b8941f' for v in current]
+    
+    y_pos = np.arange(len(names))
+    
+    bars = ax.barh(y_pos, current, color=colors, height=0.6, edgecolor='black', linewidth=0.5)
+    
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(names, fontsize=9, fontweight='bold')
+    ax.set_xlim(0, 100)
+    ax.set_xlabel('Score', fontsize=10, fontweight='bold')
+    ax.set_title('Business Scorecard - 5 Dimensões Avaliadas', fontsize=12, fontweight='bold', pad=20)
+    
+    # Adicionar valores nas barras
+    for i, (bar, val) in enumerate(zip(bars, current)):
+        ax.text(bar.get_width() + 2, bar.get_y() + bar.get_height()/2, 
+                f'{val}/100', va='center', fontsize=9, fontweight='bold')
+    
+    ax.grid(axis='x', alpha=0.3, linestyle='--')
+    plt.tight_layout()
+    
+    # Salvar como bytes
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    buf.seek(0)
+    plt.close()
+    
+    return buf.getvalue()
+
+# Função para criar gráfico de Radar
+def create_radar_chart(dimensions_scores):
+    """Cria um gráfico de radar para visualização multidimensional"""
+    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection='polar'))
+    
+    categories = list(dimensions_scores.keys())
+    values = list(dimensions_scores.values())
+    
+    # Número de variáveis
+    num_vars = len(categories)
+    
+    # Calcular ângulos
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    angles += angles[:1]  # Completar o círculo
+    values += values[:1]
+    
+    # Plotar
+    ax.plot(angles, values, 'o-', linewidth=2, color='#d4af37', markersize=8, markerfacecolor='#f2d06b')
+    ax.fill(angles, values, alpha=0.25, color='#d4af37')
+    
+    # Configurar
+    ax.set_ylim(0, 100)
+    ax.set_yticklabels([])
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, size=9, weight='bold')
+    ax.set_title('Matriz de Competências CFO™', size=12, weight='bold', pad=30)
+    
+    plt.tight_layout()
+    
+    # Salvar como bytes
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    buf.seek(0)
+    plt.close()
+    
+    return buf.getvalue()
+
+# Função para criar gráfico de progresso
+def create_progress_chart(current, target, label):
+    """Cria um gráfico de gauge/progresso"""
+    fig, ax = plt.subplots(figsize=(4, 4))
+    
+    # Criar gauge
+    percentage = (current / target) * 100 if target > 0 else 0
+    
+    # Criar círculo
+    circle = Circle((0.5, 0.5), 0.4, fill=False, linewidth=8, color='#1a1d24')
+    ax.add_patch(circle)
+    
+    # Arco de progresso
+    if percentage > 0:
+        arc = Rectangle((0.1, 0.1), 0.8, 0.8, angle=0, 
+                       fill=True, color='#d4af37', 
+                       extent=percentage * 3.6)  # 360 graus * percentage
+        ax.add_patch(arc)
+    
+    # Texto central
+    ax.text(0.5, 0.6, f'{current}', ha='center', va='center', 
+            fontsize=18, fontweight='bold', color='#d4af37')
+    ax.text(0.5, 0.4, f'de {target}', ha='center', va='center', 
+            fontsize=10, color='#888')
+    
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis('off')
+    ax.set_title(label, fontsize=10, weight='bold', pad=10)
+    
+    plt.tight_layout()
+    
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    buf.seek(0)
+    plt.close()
+    
+    return buf.getvalue()
+
+# Função para gerar PDF
+def generate_pdf_report(data, relatorio_texto):
+    """Gera um PDF profissional estilo McKinsey"""
+    
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Capa
+    pdf.set_font('Helvetica', 'B', 24)
+    pdf.set_text_color(212, 175, 55)  # Dourado
+    pdf.cell(0, 30, 'CFO DA ALMA E DOS NEGÓCIOS', ln=True, align='C')
+    
+    pdf.set_font('Helvetica', 'I', 14)
+    pdf.set_text_color(200, 200, 200)
+    pdf.cell(0, 10, 'Relatório Estratégico Premium', ln=True, align='C')
+    
+    pdf.ln(20)
+    
+    # Dados do cliente
+    pdf.set_font('Helvetica', 'B', 12)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, f'CLIENTE: {data["nome_cliente"]}', ln=True)
+    pdf.cell(0, 10, f'DATA: {datetime.now().strftime("%d/%m/%Y")}', ln=True)
+    pdf.cell(0, 10, f'TIPO DE ANÁLISE: {data["tipo_analise"]}', ln=True)
+    pdf.cell(0, 10, f'NICH: {data["nicho"]}', ln=True)
+    
+    pdf.ln(20)
+    
+    # Sumário Executivo
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 10, '01. SUMÁRIO EXECUTIVO', ln=True)
+    
+    pdf.set_font('Helvetica', '', 10)
+    pdf.set_text_color(0, 0, 0)
+    pdf.multi_cell(0, 6, relatorio_texto[:2000])  # Primeira parte do relatório
+    
+    pdf.add_page()
+    
+    # Diagnóstico da Alma
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 10, '02. DIAGNÓSTICO DA ALMA', ln=True)
+    
+    if data.get('data_nascimento'):
+        pdf.set_font('Helvetica', '', 10)
+        pdf.set_text_color(0, 0, 0)
+        pdf.multi_cell(0, 6, f'Data de Nascimento: {data["data_nascimento"]}\n')
+        pdf.multi_cell(0, 6, relatorio_texto[2000:4000])  # Parte sobre numerologia
+    
+    pdf.add_page()
+    
+    # Diagnóstico dos Negócios
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 10, '03. DIAGNÓSTICO DOS NEGÓCIOS', ln=True)
+    
+    pdf.set_font('Helvetica', '', 10)
+    pdf.set_text_color(0, 0, 0)
+    pdf.multi_cell(0, 6, relatorio_texto[4000:7000])
+    
+    pdf.add_page()
+    
+    # Plano de Ação
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 10, '04. PLANO DE AÇÃO TÁTICO', ln=True)
+    
+    pdf.set_font('Helvetica', '', 10)
+    pdf.set_text_color(0, 0, 0)
+    pdf.multi_cell(0, 6, relatorio_texto[7000:])
+    
+    pdf.add_page()
+    
+    # Conclusão
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 10, '05. CONCLUSÃO E PRÓXIMOS PASSOS', ln=True)
+    
+    pdf.set_font('Helvetica', '', 10)
+    pdf.set_text_color(0, 0, 0)
+    pdf.multi_cell(0, 6, 
+        'Este relatório foi elaborado com base na metodologia CFO da Alma e dos Negócios™, '
+        'combinando análise estratégica de nível McKinsey com diagnóstico holístico profundo.\n\n'
+        'Próximos passos:\n'
+        '1. Agendar reunião de apresentação do diagnóstico\n'
+        '2. Definir prioridades de implementação\n'
+        '3. Iniciar consultoria de implementação\n\n'
+        'Contato: Luciano Francisco\n'
+        'www.lucianofrancisco.com.br')
+    
+    # Salvar como bytes
+    pdf_bytes = pdf.output()
+    
+    return pdf_bytes
 
 st.markdown("---")
 
@@ -178,7 +392,7 @@ DADOS DO CLIENTE:
     with st.spinner("🧠 Processando matriz de dados com metodologia McKinsey-Grade + Diagnóstico Holístico..."):
         try:
             response = client.chat.completions.create(
-                model="openai/gpt-oss-20b",  # ✅ MODELO CONFIRMADO FUNCIONAL
+                model="openai/gpt-oss-20b",
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": f"DADOS BRUTOS COLETADOS PARA ANÁLISE:\n\n{dados_brutos}"}
@@ -191,18 +405,46 @@ DADOS DO CLIENTE:
 
             st.success("✅ Relatório Estratégico Premium Gerado com Sucesso!")
             st.markdown("---")
+            
+            # Exibir relatório na tela
+            st.markdown("### 📄 Visualização do Relatório")
             st.markdown(relatorio_gerado)
             st.markdown("---")
-
-            nome_arquivo = f"Relatorio_Estrategico_CFO_{nome_cliente.replace(' ', '_').replace('/', '_')}_{datetime.now().strftime('%Y%m%d')}.md"
-            st.download_button(
-                label="📥 Baixar Relatório Premium (Markdown)",
-                data=relatorio_gerado,
-                file_name=nome_arquivo,
-                mime="text/markdown"
-            )
             
-            st.info("💡 **Dica de Uso Executivo:** Copie o texto, cole no Word/Notion, aplique sua identidade visual e envie ao cliente como 'Diagnóstico Estratégico Preliminar' — uma arma poderosa para fechar consultorias de alto ticket.")
+            # Criar dados para o PDF
+            dados_pdf = {
+                "nome_cliente": nome_cliente,
+                "tipo_analise": tipo_analise,
+                "nicho": nicho_mercado or "Não informado",
+                "data_nascimento": data_nascimento.strftime('%d/%m/%Y') if data_nascimento else "Não fornecida",
+                "faturamento_atual": faturamento_atual or "Não informado",
+                "faturamento_meta": faturamento_meta or "Não informada"
+            }
+            
+            # Gerar PDF
+            pdf_bytes = generate_pdf_report(dados_pdf, relatorio_gerado)
+            
+            # Botões de download
+            col_download1, col_download2 = st.columns(2)
+            
+            with col_download1:
+                st.download_button(
+                    label="📥 Baixar Relatório em PDF (Executivo)",
+                    data=pdf_bytes,
+                    file_name=f"Relatorio_CFO_{nome_cliente.replace(' ', '_').replace('/', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf",
+                    mime="application/pdf"
+                )
+            
+            with col_download2:
+                nome_arquivo_md = f"Relatorio_CFO_{nome_cliente.replace(' ', '_').replace('/', '_')}_{datetime.now().strftime('%Y%m%d')}.md"
+                st.download_button(
+                    label="📄 Baixar Relatório em Markdown",
+                    data=relatorio_gerado,
+                    file_name=nome_arquivo_md,
+                    mime="text/markdown"
+                )
+            
+            st.info("💡 **Dica de Uso Executivo:** O PDF está formatado no padrão McKinsey para apresentação a C-levels. Use o Markdown para edições rápidas no Notion/Word.")
 
         except Exception as e:
             st.error(f"❌ Erro na comunicação com a IA: {str(e)}")
